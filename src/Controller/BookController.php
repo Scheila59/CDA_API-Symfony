@@ -3,7 +3,6 @@
 namespace App\Controller;
 
 use App\Entity\Book;
-use App\Entity\Author;
 use App\Repository\BookRepository;
 use App\Repository\AuthorRepository;
 use Doctrine\ORM\EntityManagerInterface;
