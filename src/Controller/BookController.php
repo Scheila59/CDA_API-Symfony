@@ -14,6 +14,8 @@ use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final class BookController extends AbstractController
 {
@@ -69,13 +71,24 @@ final class BookController extends AbstractController
 
     // ajoute un livre
     #[Route('/api/books', name: "createBook", methods: ['POST'])]
-    public function createBook(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, AuthorRepository $authorRepository): JsonResponse
+    #[IsGranted('ROLE_ADMIN', message: 'Vous n\'avez pas les droits suffisants pour créer un livre')]
+    public function createBook(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, AuthorRepository $authorRepository, ValidatorInterface $validator): JsonResponse
     {
         $book = $serializer->deserialize(
             $request->getContent(),
             Book::class,
             'json'
         );
+        // On verifie les erreurs
+        $errors = $validator->validate($book);
+
+        if ($errors->count() > 0) {
+            return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
+
+        $em->persist($book);
+        $em->flush();
+
         // recup de toutes les donnees envoyees sous forme de tableau
         $content = $request->toArray();
 
@@ -84,10 +97,6 @@ final class BookController extends AbstractController
 
         // On cherche l'auteur qui correspond et on l'assigne au livre, si "find" ne trouve pas l'auteur alors null sera retourné.
         $book->setAuthor($authorRepository->find($idAuthor));
-
-        $em->persist($book);
-        $em->flush();
-
         $jsonBook = $serializer->serialize($book, 'json', ['groups' => 'getBooks']);
 
         $location = $urlGenerator->generate('detailBook', ['id' => $book->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
