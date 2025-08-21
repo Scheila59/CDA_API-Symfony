@@ -3,7 +3,6 @@
 namespace App\Controller;
 
 use App\Entity\Book;
-use JMS\Serializer\Serializer;
 use App\Repository\BookRepository;
 use App\Service\VersioningService;
 use App\Repository\AuthorRepository;
@@ -21,16 +20,52 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Nelmio\ApiDocBundle\Annotation\Model;
+use OpenApi\Annotations as OA;
+use OpenApi\Attributes as OAT;
 
 
 final class BookController extends AbstractController
 {
-    // recupere la liste de tous les livres
+    /**
+     *  Cette méthode permet de récupérer l'ensemble des livres.
+     *
+     *  @OA\Response(
+     *      response=200,
+     *      description="Retourne la liste des livres",
+     *      @OA\JsonContent(
+     *          type="array",
+     *          @OA\Items(ref=@Model(type=Book::class, groups={"getBooks"}))
+     *      )
+     *  )
+     * 
+     *  @OA\Parameter(
+     *      name="page",
+     *      in="query",
+     *      description="La page que l'on veut récupérer",
+     *      @OA\Schema(type="integer")
+     *  )
+     *
+     *  @OA\Parameter(
+     *      name="limit",
+     *      in="query",
+     *      description="Le nombre d'éléments que l'on veut récupérer",
+     *      @OA\Schema(type="integer")
+     *  )
+     *  @OA\Tag(name="Books")
+     *
+     *  @param BookRepository $bookRepository
+     *  @param SerializerInterface $serializer
+     *  @param Request $request
+     *  @return JsonResponse
+     */
+    #[OAT\Parameter(name: "page", in: "query", description: "La page que l'on veut récupérer", schema: new OAT\Schema(type: "integer"))]
+    #[OAT\Parameter(name: "limit", in: "query", description: "Le nombre d'éléments que l'on veut récupérer", schema: new OAT\Schema(type: "integer"))]
     #[Route('/api/books', name: 'books', methods: ['GET'])]
     public function getAllBooks(BookRepository $bookRepository, SerializerInterface $serializer, Request $request, TagAwareCacheInterface $cache): JsonResponse
     {
-        $page = $request->get('page', 1);
-        $limit = $request->get('limit', 3);
+        $page = (int) $request->get('page', 1);
+        $limit = (int) $request->get('limit', 3);
 
         $idCache = "getAllBooks-" . $page . "-" . $limit;
         $jsonBookList = $cache->get($idCache, function (ItemInterface $item) use ($bookRepository, $page, $limit, $serializer) {
