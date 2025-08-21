@@ -6,7 +6,7 @@ use Doctrine\ORM\Mapping as ORM;
 use App\Repository\AuthorRepository;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\ArrayCollection;
-use Symfony\Component\Serializer\Annotation\Groups;
+use JMS\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: AuthorRepository::class)]
@@ -15,15 +15,15 @@ class Author
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['getBooks'])]
+    #[Groups(['getBooks', 'getAuthors'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['getBooks'])]
+    #[Groups(['getBooks', 'getAuthors'])]
     private ?string $firstName = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['getBooks'])]
+    #[Groups(['getBooks', 'getAuthors'])]
     #[Assert\NotBlank(message: "Le Nom de l'auteur est obligatoire")]
     #[Assert\Length(min: 3, max: 30, minMessage: "Le Nom de l'auteur doit faire au moins {{ limit }} caractères", maxMessage: "Le nom de l'auteur ne peut pas faire plus de {{ limit }} caractères")]
     private ?string $lastName = null;
